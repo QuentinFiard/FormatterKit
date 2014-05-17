@@ -194,6 +194,45 @@ static inline NSComparisonResult NSCalendarUnitCompareSignificance(NSCalendarUni
     return string;
 }
 
+- (NSDate *)nextStartingDateForLabelChangeFromDate:(NSDate *)startingDate
+                                            toDate:(NSDate *)endingDate {
+    NSTimeInterval seconds = [startingDate timeIntervalSinceDate:endingDate];
+    if (fabs(seconds) < self.presentTimeIntervalMargin) {
+        return [startingDate dateByAddingTimeInterval:self.presentTimeIntervalMargin - seconds];
+    }
+
+    NSDateComponents *components = [self.calendar components:self.significantUnits fromDate:startingDate toDate:endingDate options:0];
+
+    NSUInteger numberOfUnits = 0;
+    NSUInteger unitIndex = 0, lastUnitIndex;
+    NSArray *units = @[@"year", @"month", @"week", @"day", @"hour", @"minute", @"second"];
+    for (NSString *unitName in units) {
+        NSCalendarUnit unit = NSCalendarUnitFromString(unitName);
+        if ((self.significantUnits & unit) && NSCalendarUnitCompareSignificance(self.leastSignificantUnit, unit) != NSOrderedDescending) {
+            NSNumber *number = @(abs((int)[[components valueForKey:unitName] integerValue]));
+            if ([number integerValue] && (self.numberOfSignificantUnits == 0 || numberOfUnits < self.numberOfSignificantUnits)) {
+                lastUnitIndex = unitIndex;
+                numberOfUnits++;
+            }
+        }
+        unitIndex++;
+    }
+    if (numberOfUnits < self.numberOfSignificantUnits || lastUnitIndex == units.count - 1) {
+        return [startingDate dateByAddingTimeInterval:ceil(seconds) - seconds];
+    }
+    NSDateComponents *componentsToAdd = [[NSDateComponents alloc] init];
+    for (NSInteger i = lastUnitIndex + 1; i < units.count; ++i) {
+        NSString *unitName = units[i];
+        NSCalendarUnit unit = NSCalendarUnitFromString(unitName);
+        NSInteger toAdd = [[components valueForKey:unitName] integerValue];
+        if (i == units.count - 1) {
+            ++toAdd;
+        }
+        [componentsToAdd setValue:@(toAdd) forKey:unitName];
+    }
+    return [self.calendar dateByAddingComponents:componentsToAdd toDate:startingDate options:0];
+}
+
 - (NSString *)localizedStringForNumber:(NSUInteger)number ofCalendarUnit:(NSCalendarUnit)unit {
     BOOL singular = (number == 1);
 

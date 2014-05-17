@@ -142,4 +142,13 @@
 - (NSString *)stringForTimeIntervalFromDate:(NSDate *)startingDate
                                      toDate:(NSDate *)endingDate;
 
+/**
+ Returns the closest date following startingDate that corresponds to a label change.
+
+ @param startingDate The starting date
+ @param endingDate The ending date
+ */
+- (NSDate *)nextStartingDateForLabelChangeFromDate:(NSDate *)startingDate
+                                            toDate:(NSDate *)endingDate;
+
 @end
